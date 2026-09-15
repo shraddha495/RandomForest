@@ -33,14 +33,6 @@ st.markdown(
         text-align: center;
         font-family: 'Helvetica Neue', sans-serif;
     }
-    .prediction-box {
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        font-weight: bold;
-        font-size: 20px;
-        margin-top: 20px;
-    }
     </style>
 """,
     unsafe_allow_html=True,
@@ -60,7 +52,7 @@ model = load_model()
 # App Title and Description
 st.title("Customer Behavior Prediction")
 st.write(
-    "Please fill in the customer details below to predict the outcome using your Random Forest model."
+    "Please fill in the customer details below to predict the outcome."
 )
 
 st.markdown("---")
@@ -81,9 +73,8 @@ with st.form("prediction_form"):
             "Occupation",
             [
                 "Employee",
-                "Business",
                 "Student",
-                "Self-Employed",
+                "Self Employed",
                 "Housewife",
                 "Other",
             ],
@@ -106,18 +97,39 @@ with st.form("prediction_form"):
 
 # Prediction Logic
 if submitted:
-    # Create a DataFrame matching the model's expected features
-    # Note: Ensure the order matches what your pipeline/model expects
+    # --- MAPPING CATEGORICAL STRINGS TO NUMBERS ---
+    # Update these numbers if your training script used a different mapping order!
+    gender_map = {"Male": 1, "Female": 0, "Other": 2}
+    marital_map = {"Single": 0, "Married": 1, "Divorced": 2}
+    occupation_map = {
+        "Employee": 0,
+        "Student": 1,
+        "Self Employed": 2,
+        "Housewife": 3,
+        "Other": 4,
+    }
+    edu_map = {
+        "School": 0,
+        "Graduate": 1,
+        "Post Graduate": 2,
+        "Professional": 3,
+        "Others": 4,
+    }
+    customer_type_map = {"New": 0, "Regular": 1, "VIP": 2}
+
+    # Convert inputs to numeric form
     input_data = pd.DataFrame(
         {
             "Age": [age],
-            "Gender": [gender],
-            "Marital Status": [marital_status],
-            "Occupation": [occupation],
+            "Gender": [gender_map.get(gender, 0)],
+            "Marital Status": [marital_map.get(marital_status, 0)],
+            "Occupation": [occupation_map.get(occupation, 0)],
             "Monthly Income": [monthly_income],
-            "Educational Qualifications": [educational_qualifications],
+            "Educational Qualifications": [
+                edu_map.get(educational_qualifications, 0)
+            ],
             "Family size": [family_size],
-            "Customer Type": [customer_type],
+            "Customer Type": [customer_type_map.get(customer_type, 0)],
         }
     )
 
@@ -135,10 +147,8 @@ if submitted:
         st.markdown("---")
         st.subheader("Prediction Result")
 
-        if result == "Yes":
-            st.success(
-                f"### Prediction: {result} 🎉", icon="✅"
-            )  # Or customized output
+        if result == "Yes" or result == 1:
+            st.success(f"### Prediction: {result} 🎉", icon="✅")
         else:
             st.info(f"### Prediction: {result}", icon="ℹ️")
 
@@ -147,6 +157,4 @@ if submitted:
             st.write(f"**Confidence Score:** {confidence:.2f}%")
 
     except Exception as e:
-        st.error(
-            f"Error during prediction: {e}. (Make sure categorical values match your training encoding scheme if encoders were part of a pipeline)."
-        )
+        st.error(f"Error during prediction: {e}")
